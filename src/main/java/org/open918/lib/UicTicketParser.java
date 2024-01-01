@@ -58,8 +58,8 @@ public class UicTicketParser {
             assert messageTypeVersion == 2;
 
             // DSA signature has 32 bytes of r + 32 bytes of s
-            s.setSignature(contents.substring(14, 77));
-            s.setMessageLength(Integer.parseInt(contents.substring(78, 81)));
+            s.setSignature(contents.substring(14, 78));
+            s.setMessageLength(Integer.parseInt(contents.substring(78, 82)));
 
             s.setCompressedMessage(Arrays.copyOfRange(data, 82, data.length - 1));
             s.setMessage(decompress(s.getCompressedMessage(), s.getMessageLength() - 1));
