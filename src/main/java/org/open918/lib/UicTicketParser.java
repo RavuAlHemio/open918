@@ -31,7 +31,7 @@ public class UicTicketParser {
             data = ZxingUtil.cleanupZXingData(data);
         }
 
-        String contents = new String(data);
+        String contents = bytesToString(data);
 
         Ticket s = new Ticket();
         s.setMessageType(contents.substring(0, 3));
@@ -214,6 +214,15 @@ public class UicTicketParser {
     private static Integer getInteger(String body, int offset, int start, int end) {
         String result = getString(body, offset, start, end).replaceAll("[^\\d.]", "");
         return (!result.isEmpty()) ? Integer.valueOf(result.replace(".0", "")) : 0;
+    }
+
+    /** Naively converts bytes to a string. This is equivalent to the ISO-8859-1 encoding. */
+    private static String bytesToString(byte[] bytes) {
+        StringBuilder sb = new StringBuilder(bytes.length);
+        for (int i = 0; i < bytes.length; i++) {
+            sb.append((char)bytes[i]);
+        }
+        return sb.toString();
     }
 
 }
