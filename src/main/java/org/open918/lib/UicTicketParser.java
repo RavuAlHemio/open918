@@ -38,17 +38,32 @@ public class UicTicketParser {
         if (!MESSAGE_TYPES.contains(s.getMessageType().toUpperCase())) {
             throw new ParseException("Not a UIC ticket", 0);
         }
-        s.setMessageTypeVersion(Integer.parseInt(contents.substring(3, 5)));
+        int messageTypeVersion = Integer.parseInt(contents.substring(3, 5));
+        s.setMessageTypeVersion(messageTypeVersion);
+        if (messageTypeVersion != 1 && messageTypeVersion != 2) {
+            throw new ParseException("Unsupported UIC ticket version " + messageTypeVersion, 0);
+        }
         s.setRicsCode(Integer.parseInt(contents.substring(5, 9)));
         s.setSignatureKeyId(contents.substring(9, 14));
-        s.setSignature(contents.substring(14, 63));
+        if (messageTypeVersion == 1) {
+            s.setSignature(contents.substring(14, 63));
 
-        // Hack - the message length is encoded in a variety of ways apparently
-        String messageLengthArea = contents.substring(61, 68);
-        s.setMessageLength(Integer.valueOf(messageLengthArea.replaceAll("[^\\d.]", "")));
+            // Hack - the message length is encoded in a variety of ways apparently
+            String messageLengthArea = contents.substring(61, 68);
+            s.setMessageLength(Integer.valueOf(messageLengthArea.replaceAll("[^\\d.]", "")));
 
-        s.setCompressedMessage(Arrays.copyOfRange(data, 68, data.length - 1));
-        s.setMessage(decompress(s.getCompressedMessage(), s.getMessageLength() - 1));
+            s.setCompressedMessage(Arrays.copyOfRange(data, 68, data.length - 1));
+            s.setMessage(decompress(s.getCompressedMessage(), s.getMessageLength() - 1));
+        } else {
+            assert messageTypeVersion == 2;
+
+            // DSA signature has 32 bytes of r + 32 bytes of s
+            s.setSignature(contents.substring(14, 77));
+            s.setMessageLength(Integer.parseInt(contents.substring(78, 81)));
+
+            s.setCompressedMessage(Arrays.copyOfRange(data, 82, data.length - 1));
+            s.setMessage(decompress(s.getCompressedMessage(), s.getMessageLength() - 1));
+        }
 
         try {
             tryParse(s, "UTF-8");
